@@ -6,14 +6,25 @@ const find = require('lodash.find')
 const get = require('lodash.get')
 const concat = require('lodash.concat')
 const nodejieba = require("nodejieba")
-const limit = pLimit(5);
+const limit = pLimit(8);
+// 标题筛选
 var isKeyWords = '照相,拍照,测评,评测'
+
+// 正文筛选
 var contentWords = '摄像,拍照,人像,效果,图片,照片,相机'
 
-var keyWords = '好';
 
+// 关键字
+var goodKeyWords = '好';
 
-var num = 46500;
+var badKeyWords = '不好'
+
+// 真实贴吧数量
+var actual = 46500;
+
+// 使用贴吧数量
+var num = 5000
+
 
 function makeMap(str) {
   let keyW = isKeyWords.split(',');
@@ -67,7 +78,7 @@ async function getTilteLists(num) {
 
 var pPromise = [];
 
-for (let i = 1; i < parseInt(5000 / 50); i++) {
+for (let i = 1; i < parseInt(num / 50); i++) {
   pPromise.push(limit(() => getTilteLists(i * 50)))
 }
 
@@ -88,20 +99,19 @@ for (let i = 1; i < parseInt(5000 / 50); i++) {
       let contentWordsLists = contentWords.split(',');
       contentWordsLists.forEach((c) => {
         if (cutL.indexOf(c) !== -1) {
-          if (cutL.indexOf('不好') !== -1) {
+          if (cutL.indexOf(badKeyWords) !== -1) {
             right++;
-            console.log('right ------------' + right)
-          } else if (cutL.indexOf('好') !== -1) {
+            console.log('不好 ------------' + right)
+          } else if (cutL.indexOf(goodKeyWords) !== -1) {
             left++
-            console.log('left ------------' + left)
+            console.log('好 ------------' + left)
           }
         } else {
-          console.log('pass----')
+          console.log('匹配不到----')
         }
       })
     })
 
-    //lzl_content_main
     return arr
   }
 
@@ -109,21 +119,12 @@ for (let i = 1; i < parseInt(5000 / 50); i++) {
   let contentP = []
   const result = await Promise.all(pPromise);
   let results = Array.prototype.concat.apply([], result);
-  console.log(results)
   for (let i = 1; i < results.length; i++) {
     contentP.push(limit(() => getContentsLists(results[i].url)))
   }
   const dresult = await Promise.all(contentP);
-  console.log(left)
-  console.log(right)
+  console.log('最终结果----好 -----' + left)
+  console.log('最终结果----不好 -----' + right)
 })();
 
 
-
-
-
-
-// getContentsLists().then((res) => {
-//   console.log(right)
-//   console.log(left)
-// })
